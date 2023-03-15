@@ -9,3 +9,7 @@ practice task of Bingyan Studio
 开始写词法分析器，参考
 https://blog.csdn.net/weixin_42529594/article/details/105622166
 《编译原理》附录
+
+## 3.15
+参考《编译原理》完成简易版 文法。
+根据 文法 ，采取最朴素的 预测分析法 ，完成最朴素的 文法分析器，构造 AST
