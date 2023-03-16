@@ -7,7 +7,7 @@ int tot=0;
 string c_type[]={"int","double","void","float","bool","string"};
 string c_res[]={"else","define","break","continue","scanf","printf","getchar","while","if","for","extern","return"};
 string c_op2[]={"||","&&","==","!=","<=",">=",">>","<<"};
-string c_op1[]={"#","(",")","[","]","{","}",";","=","&","|","^","<",">","+","-","*","/","%","!"};
+string c_op1[]={"#","(",")","[","]","{","}",";","=","&","|","^","<",">","+","-","*","/","%","!",","};
 
 /*-----decls------*/
 int program();
@@ -37,12 +37,15 @@ int factor();
 struct Token{
 	string name,val;
 	vector<int> son;
-	int idx;
+	int idx,fa;
 	void print(){
 		cout<<idx<<":"<<"< "<<name<<" , "<<val<<" >"<<":";
 		for(int i=0;i<son.size();++i)cout<<son[i]<<" ";cout<<endl;
 	}
 }T[100005];
+
+map<string , int> fun;//memorize all the function name
+ 
 int add(string a,string b){
 	T[++tot].name=a,T[tot].val=b,T[tot].idx=tot;
 	return tot;
@@ -54,7 +57,7 @@ bool Isdigi(char s){
 bool Ischar(char s){
 	return (s>='a'&&s<='z')||(s>='A'&&s<='Z')||s=='_';
 }
-int preprocess(char s[],int len){
+int preprocess(char s[],int len){//delete all useless character 
 	char temp[5000]={0};
 	int ind=0;
 	for(int i=0;i<len;++i){
@@ -73,12 +76,12 @@ int preprocess(char s[],int len){
 	strcpy(s,temp);
 	return ind;
 }
-void lexer(char s[],int &idx,int len){
+void lexer(char s[],int &idx,int len){//analyze the lexer
 	char ch=s[idx],peek=s[idx+1];
 	string now;now=ch;now+=peek;
 	for(auto t:c_op2){
 		if(t==now){
-			add(t,"");
+			add(t,t);
 			idx++;
 			return ;
 		}
@@ -86,7 +89,7 @@ void lexer(char s[],int &idx,int len){
 	now=ch;
 	for(auto t:c_op1){
 		if(t==now){
-			add(t,"");
+			add(t,t);
 			return ;
 		}
 	}
@@ -112,7 +115,8 @@ void lexer(char s[],int &idx,int len){
 	}
 	if(Isdigi(ch)){
 		now=ch;
-		while(idx+1<len&&(Isdigi(s[idx+1]||s[idx+1]=='.'))){
+		//cout<<ch<<"*"<<s[idx]<<endl;
+		while(idx+1<len&&(Isdigi(s[idx+1])||s[idx+1]=='.')){
 			now+=s[++idx];
 		}
 		add("num",now);
@@ -129,17 +133,20 @@ void lexer(char s[],int &idx,int len){
 	}
 	if(ch=='\"'){
 		now=ch;
+		//cout<<ch<<endl;
 		while(idx+1<len&&s[idx+1]!='\"'){
 			now+=s[++idx];
 		}
 		now+=s[++idx];
 		add("string",now);
+		//cout<<now<<"*"<<endl;
 		return ;
 	}
 }
 int idx,length,to;
 void link(int x,int y){
 	T[x].son.pb(y);
+	T[y].fa=x;
 }
 bool emp(int x){
 	return T[x].son.size()==0;
@@ -154,11 +161,11 @@ bool match(string s){
 	return T[idx].name==s;
 }
 /*--------synax--------*/
-
+//analyze the synax and create the AST
 int program(){
 	int now=add("program","");
 	for(;idx<=length;){
-		cout<<idx<<endl;
+		//cout<<idx<<endl;
 		//if(match("type"))
 		link(now,func());
 	}
@@ -168,12 +175,13 @@ int program(){
 int func(){
 	int now=add("func","");
 	link(now,idx++);
+	fun[T[idx].val]=now;
+	//cout<<T[idx].name<<" "<<now<<endl;
 	link(now,idx++);
 	link(now,idx++);
 	if(match("type")||match("extern"))link(now,decls());
 	link(now,idx++);
 	link(now,block());
-	
 	return now;
 }
 int ofunc(){
@@ -294,7 +302,8 @@ int stmt(){
 		link(now,idx++);
 		link(now,idx++);
 		idx++;idx++;
-		if(to=expr())link(now,expr());
+		//cout<<"********";T[idx].print();
+		if(to=expr())link(now,to);
 		link(now,idx++);
 		link(now,idx++);
 		return chk(now);
@@ -452,30 +461,177 @@ int factor(){
 	return chk(now);
 }
 	
-		
+/*--------------------*/
 
-void dfs(int x){
+void Out_put(int x){
 	T[x].print();
 	for(int i=0;i<T[x].son.size();++i){
-		dfs(T[x].son[i]);
+		Out_put(T[x].son[i]);
 	}
 }	
+
+/*-------output-------*/
+string node[5000005];
+int Head[500005],Tail[500005];
+int tt=0;//node_index
+
+void put_dot(string name,string val,string shap){
+	cout<<"	"<<name<<"[label = \""<<val<<"\",shape = "<<shap<<"];"<<endl;
+}
+void put_link(int name1,int name2,string typ){
+	if(name1==0||name2==0)return ;
+	cout<<"	"<<node[name1]<<" -> "<<node[name2]<<"[label = \""<<typ<<"\"]"<<endl;
+}
+int Add(string name,string val,string shap){
+	put_dot(name,val,shap);
+	node[++tt]=name;
+	return tt;
+}
+string change(int x){
+	string now;
+	while(x){
+		now=now+(char)(x%10+'0');
+		x/=10;
+	}
+	return now;
+}
+string dfs_expr(int x){
+	string now="";
+	if(x!=0&&T[x].val!=";")now+=T[x].val;
+	for(auto y:T[x].son){
+		now+=dfs_expr(y);
+	}
+	//cout<<x<<endl;
+	return now;
+}
+int dfs(int x){
+//	cout<<T[x].name<<endl;
+	if(T[x].name=="stmt"){
+		int y=T[x].son[0];
+		if(T[y].name=="while"){
+			Head[x]=Add("pd"+change(x),"≈–∂œ:"+dfs_expr(T[x].son[2]),"diamond");
+			Tail[x]=Add("end"+change(x),"while Ω· ¯","oval"); 
+			//cout<<"**"<<endl;
+			to=dfs(T[x].son[4]);
+			//cout<<Head[x]<<":"<<Head[to]<<endl;
+			put_link(Head[x],Head[to],"T");
+			put_link(Tail[to],Head[x],"");
+			put_link(Head[x],Tail[x],"F");
+			//cout<<"**"<<endl;
+			return x;
+		}
+		if(T[y].name=="for"){
+			Head[x]=Add("csh"+change(x),"≥ı ºªØ:"+dfs_expr(T[x].son[2]),"box");
+			int temp=Add("pd"+change(x),"≈–∂œ:"+dfs_expr(T[x].son[4]),"diamond");
+			put_link(Head[x],temp,"");
+			to=dfs(T[x].son[8]);
+			put_link(temp,Head[to],"T");
+			int tmmp=Add("gen"+change(x),"∏˙”Ôæ‰:"+dfs_expr(T[x].son[6]),"box");
+			put_link(Tail[to],tmmp,"");
+			put_link(tmmp,temp,"");
+			Tail[x]=Add("end"+change(x),"for Ω· ¯","oval");
+			put_link(temp,Tail[x],"F");
+			return x;
+		}
+		if(T[y].name=="if"){
+			Head[x]=Add("pd"+change(x),"≈–∂œ:"+dfs_expr(T[x].son[2]),"diamond");
+			Tail[x]=Add("end"+change(x),"if Ω· ¯","oval");
+			to=dfs(T[x].son[4]);
+			put_link(Head[x],Head[to],"T");
+			put_link(Tail[to],Tail[x],"");
+			if(T[x].son.size()>6){
+				to=dfs(T[x].son[6]);
+				put_link(Head[x],Head[to],"F");
+				put_link(Tail[to],Tail[x],"");
+			}else{
+				put_link(Head[x],Tail[x],"F");
+			}
+			return x;
+		}
+		
+		if(T[y].name=="scanf"){
+			Head[x]=Add("in"+change(x)," ‰»Î:"+dfs_expr(T[x].son[2]),"parallelogram");
+			Tail[x]=Head[x];
+			return x;
+		}
+		if(T[y].name=="printf"){
+			Head[x]=Add("out"+change(x)," ‰≥ˆ:"+dfs_expr(T[x].son[2]),"parallelogram");
+			Tail[x]=Head[x];
+			return x;
+		}
+		if(T[y].name=="block"){
+			return dfs(y);
+		}
+		if(T[y].name=="break"){
+			Head[x]=Add("break"+change(x),"break","box");
+			Tail[x]=Head[x];
+			return x;
+		}
+		if(T[y].name=="continue"){
+			Head[x]=Add("continue"+change(x),"continue","box");
+			Tail[x]=Head[x];
+			return x;
+		}	
+		if(T[y].name=="return"){
+			Head[x]=Add("return"+change(x),"return","box");
+			Tail[x]=Head[x];
+			return x;
+		}
+		if(T[y].name=="decl")return 0;
+		//if(T[y].name=="expr"){
+		Head[x]=Add("expr"+change(x),dfs_expr(y),"box");
+		Tail[x]=Head[x];
+		return x;
+		//}
+	}
+	if(T[x].name=="func"){
+		return dfs(T[x].son[4]);
+	}
+	if(T[x].name=="block"){
+		return dfs(T[x].son[1]);
+	}
+	if(T[x].name=="stmts"){
+		for(auto t:T[x].son){
+			to=dfs(t);
+			if(to==0)continue;
+			if(Head[x]==0){
+				Head[x]=Head[to];
+				Tail[x]=Tail[to];
+				continue;
+			}
+			put_link(Tail[x],Head[to],"");
+			Tail[x]=Tail[to];
+		}
+		return x;
+	}
+	return 0;
+}
+void out(){
+	cout<<"digraph {"<<endl;
+	Head[0]=Add("main","ø™ º","oval"); 
+	Tail[0]=Add("end","Ω· ¯","oval");
+	to=dfs(fun["main"]);
+//	cout<<fun["main"]<<endl;
+	put_link(Head[0],Head[to],"");
+	put_link(Tail[to],Tail[0],"");
+	cout<<"}"<<endl;
+}
+
+
 int main(){
 	freopen("prog.txt","r",stdin);
+	freopen("out.txt","w",stdout);
 	char s[5000];
 	int len=0;
-	while((s[len++]=getchar())!=EOF){
-	}
+	while((s[len++]=getchar())!=EOF);
 	--len;
 	len=preprocess(s,len);
 	for(int idx=0;idx<len;++idx){
 		lexer(s,idx,len);
 	}
 	
-	for(int i=1;i<=tot;++i){
-		T[i].print();
-	}
-	
+//	for(int i=1;i<=tot;++i)T[i].print();
+//	cout<<tot<<endl;
 	length=tot;
 	::idx=1;
 	int root=program();
@@ -483,7 +639,10 @@ int main(){
 /*	for(int i=length+1;i<=tot;++i){
 		T[i].print();
 	}*/
-	dfs(length+1);
-//	cout<<::idx<<endl;
+//	Out_put(length+1);//print AST
+	
+	out();//print graphviz.dot
+	
 	return 0;
 }
+//update 3.16 scanf / printf
