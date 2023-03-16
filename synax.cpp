@@ -289,6 +289,7 @@ int stmt(){
 		link(now,idx++);
 		return chk(now);
 	}
+	/*
 	if(match("scanf")){
 		link(now,idx++);//scanf
 		link(now,idx++);//(
@@ -297,8 +298,21 @@ int stmt(){
 		link(now,idx++);//)
 		link(now,idx++);
 		return chk(now);
+	}*/
+	if(match("scanf")){
+		link(now,idx++);//scanf
+		link(now,idx++);//(
+		idx++;//""
+		while(T[idx].name!=")"){
+			idx++;
+			if(match("&"))idx++;
+			if(to=expr())link(now,to);
+		}
+		link(now,idx++);//)
+		link(now,idx++);//;
+		return chk(now);
 	}
-	if(match("printf")){
+	/*if(match("printf")){
 		link(now,idx++);
 		link(now,idx++);
 		idx++;idx++;
@@ -307,7 +321,20 @@ int stmt(){
 		link(now,idx++);
 		link(now,idx++);
 		return chk(now);
+	}*/
+	if(match("printf")){
+		link(now,idx++);//printf
+		link(now,idx++);//(
+		link(now,idx++);//""
+		while(T[idx].name!=")"){
+			idx++;//,
+			if(to=expr())link(now,to);
+		}
+		link(now,idx++);//)
+		link(now,idx++);//;
+		return chk(now);
 	}
+		
 	if(to=expr()){
 		link(now,to);
 		link(now,idx++);
@@ -414,7 +441,7 @@ int Minus(){
 int access(){
 	int now=add("access","");
 	if(to=factor())link(now,to);
-	if(to=access2())link(now,access2());
+	if(to=access2())link(now,to);
 	return chk(now);
 }
 int access2(){
@@ -424,6 +451,7 @@ int access2(){
 		if(to=expr())link(now,to);
 		link(now,idx++);
 		if(to=access2())link(now,to);
+		//cout<<"***"<<endl;
 	}
 	return chk(now);
 }
@@ -504,6 +532,35 @@ string dfs_expr(int x){
 	//cout<<x<<endl;
 	return now;
 }
+string _del(string s){//delete the %d %lld %.lf %s %c and add 
+	string _now="";
+	for(int i=0;i<s.size();++i){
+		if(i+1<s.size()&&s[i]=='%'&&s[i+1]=='d'){
+			_now=_now+"(*)";
+			i++;continue;
+		}
+		if(i+1<s.size()&&s[i]=='%'&&s[i+1]=='s'){
+			_now=_now+"(*)";
+			i++;continue;
+		}
+		if(i+3<s.size()&&s[i]=='%'&&s[i+1]=='l'&&s[i+2]=='l'&&s[i+3]=='d'){
+			_now=_now+"(*)";
+			i+=3;continue;
+		}
+		if(i+3<s.size()&&s[i]=='%'&&s[i+1]=='.'&&s[i+2]=='l'&&s[i+3]=='f'){
+			_now=_now+"(*)";
+			i+=3;continue;
+		}
+		if(i+1<s.size()&&s[i]=='%'&&s[i+1]=='c'){
+			_now=_now+"(*)";
+			i++;continue;
+		}
+		if(s[i]=='\"')_now+="\\";
+		if(s[i]=='\'')_now+="\\";
+		_now+=s[i];
+	}
+	return _now;
+}
 int dfs(int x){
 //	cout<<T[x].name<<endl;
 	if(T[x].name=="stmt"){
@@ -550,12 +607,21 @@ int dfs(int x){
 		}
 		
 		if(T[y].name=="scanf"){
-			Head[x]=Add("in"+change(x),"输入:"+dfs_expr(T[x].son[2]),"parallelogram");
+			string now="输入:";
+			for(int i=2;i<T[x].son.size()-2;++i){
+				now=now+" "+dfs_expr(T[x].son[i]);
+			}
+			Head[x]=Add("in"+change(x),now,"parallelogram");
 			Tail[x]=Head[x];
 			return x;
 		}
 		if(T[y].name=="printf"){
-			Head[x]=Add("out"+change(x),"输出:"+dfs_expr(T[x].son[2]),"parallelogram");
+			string now="输出:"+_del(T[T[x].son[2]].val);
+			for(int i=3;i<T[x].son.size()-2;++i){
+				//cout<<T[x].son.size()-1<<endl;
+				now=now+" "+dfs_expr(T[x].son[i]);
+			}
+			Head[x]=Add("out"+change(x),now,"parallelogram");
 			Tail[x]=Head[x];
 			return x;
 		}

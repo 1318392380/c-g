@@ -1,0 +1,17 @@
+图形：
+	圆角矩形 oval
+	菱形 diamond
+	平行四边形 parallelogram
+	方框 box
+
+定义 
+	name [label = "Name",shape = box];
+
+连接
+	name -- name [label = "type"]
+
+graph{
+
+}
+
+stmt
