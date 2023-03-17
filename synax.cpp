@@ -9,6 +9,7 @@ string c_res[]={"else","define","break","continue","scanf","printf","getchar","w
 string c_op2[]={"||","&&","==","!=","<=",">=",">>","<<"};
 string c_op1[]={"#","(",")","[","]","{","}",";","=","&","|","^","<",">","+","-","*","/","%","!",","};
 
+
 /*-----decls------*/
 int program();
 int func();
@@ -44,13 +45,13 @@ struct Token{
 	}
 }T[100005];
 
+
 map<string , int> fun;//memorize all the function name
  
 int add(string a,string b){
 	T[++tot].name=a,T[tot].val=b,T[tot].idx=tot;
 	return tot;
 }
-
 bool Isdigi(char s){
 	return s>='0'&&s<='9';
 }
@@ -76,7 +77,7 @@ int preprocess(char s[],int len){//delete all useless character
 	strcpy(s,temp);
 	return ind;
 }
-void lexer(char s[],int &idx,int len){//analyze the lexer
+void lexer(char s[],int &idx,int len){//analyze the lexer 
 	char ch=s[idx],peek=s[idx+1];
 	string now;now=ch;now+=peek;
 	for(auto t:c_op2){
@@ -115,7 +116,6 @@ void lexer(char s[],int &idx,int len){//analyze the lexer
 	}
 	if(Isdigi(ch)){
 		now=ch;
-		//cout<<ch<<"*"<<s[idx]<<endl;
 		while(idx+1<len&&(Isdigi(s[idx+1])||s[idx+1]=='.')){
 			now+=s[++idx];
 		}
@@ -133,13 +133,11 @@ void lexer(char s[],int &idx,int len){//analyze the lexer
 	}
 	if(ch=='\"'){
 		now=ch;
-		//cout<<ch<<endl;
 		while(idx+1<len&&s[idx+1]!='\"'){
 			now+=s[++idx];
 		}
 		now+=s[++idx];
 		add("string",now);
-		//cout<<now<<"*"<<endl;
 		return ;
 	}
 }
@@ -156,10 +154,10 @@ int chk(int x){
 	if(T[x].son.size()==1)return T[x].son[0];
 	return x;
 }
-
 bool match(string s){
 	return T[idx].name==s;
 }
+
 /*--------synax--------*/
 //analyze the synax and create the AST
 int program(){
@@ -176,7 +174,6 @@ int func(){
 	int now=add("func","");
 	link(now,idx++);
 	fun[T[idx].val]=now;
-	//cout<<T[idx].name<<" "<<now<<endl;
 	link(now,idx++);
 	link(now,idx++);
 	if(match("type")||match("extern"))link(now,decls());
@@ -222,7 +219,6 @@ int stmts(){
 	int now=add("stmts","");
 	while(to=stmt()){
 		link(now,to);
-		//cout<<to<<endl;
 	}
 	return chk(now);
 }
@@ -284,21 +280,10 @@ int stmt(){
 	}
 	if(match("return")){
 		link(now,idx++);
-		//cout<<":"<<idx<<endl;
 		if(to=expr())link(now,to);
 		link(now,idx++);
 		return chk(now);
 	}
-	/*
-	if(match("scanf")){
-		link(now,idx++);//scanf
-		link(now,idx++);//(
-		idx++;idx++;if(match("&"))idx++;
-		if(to=expr())link(now,to);//expr
-		link(now,idx++);//)
-		link(now,idx++);
-		return chk(now);
-	}*/
 	if(match("scanf")){
 		link(now,idx++);//scanf
 		link(now,idx++);//(
@@ -312,16 +297,6 @@ int stmt(){
 		link(now,idx++);//;
 		return chk(now);
 	}
-	/*if(match("printf")){
-		link(now,idx++);
-		link(now,idx++);
-		idx++;idx++;
-		//cout<<"********";T[idx].print();
-		if(to=expr())link(now,to);
-		link(now,idx++);
-		link(now,idx++);
-		return chk(now);
-	}*/
 	if(match("printf")){
 		link(now,idx++);//printf
 		link(now,idx++);//(
@@ -451,7 +426,6 @@ int access2(){
 		if(to=expr())link(now,to);
 		link(now,idx++);
 		if(to=access2())link(now,to);
-		//cout<<"***"<<endl;
 	}
 	return chk(now);
 }
@@ -491,7 +465,8 @@ int factor(){
 	
 /*--------------------*/
 
-void Out_put(int x){
+
+void Out_put(int x){//print the AST 
 	T[x].print();
 	for(int i=0;i<T[x].son.size();++i){
 		Out_put(T[x].son[i]);
@@ -499,6 +474,7 @@ void Out_put(int x){
 }	
 
 /*-------output-------*/
+//print in dot language
 string node[5000005];
 int Head[500005],Tail[500005];
 int tt=0;//node_index
@@ -529,10 +505,9 @@ string dfs_expr(int x){
 	for(auto y:T[x].son){
 		now+=dfs_expr(y);
 	}
-	//cout<<x<<endl;
 	return now;
 }
-string _del(string s){//delete the %d %lld %.lf %s %c and add 
+string _del(string s){//delete the ( %d %lld %.lf %s %c ) and add ( \ ) in the statement of "printf"
 	string _now="";
 	for(int i=0;i<s.size();++i){
 		if(i+1<s.size()&&s[i]=='%'&&s[i+1]=='d'){
@@ -565,19 +540,15 @@ string _del(string s){//delete the %d %lld %.lf %s %c and add
 	return _now;
 }
 int dfs(int x){
-//	cout<<T[x].name<<endl;
 	if(T[x].name=="stmt"){
 		int y=T[x].son[0];
 		if(T[y].name=="while"){
 			Head[x]=Add("pd"+change(x),"判断:"+dfs_expr(T[x].son[2]),"diamond");
 			Tail[x]=Add("end"+change(x),"while 结束","oval"); 
-			//cout<<"**"<<endl;
 			to=dfs(T[x].son[4]);
-			//cout<<Head[x]<<":"<<Head[to]<<endl;
 			put_link(Head[x],Head[to],"T");
 			put_link(Tail[to],Head[x],"");
 			put_link(Head[x],Tail[x],"F");
-			//cout<<"**"<<endl;
 			return x;
 		}
 		if(T[y].name=="for"){
@@ -621,7 +592,6 @@ int dfs(int x){
 		if(T[y].name=="printf"){
 			string now="输出:"+_del(T[T[x].son[2]].val);
 			for(int i=3;i<T[x].son.size()-2;++i){
-				//cout<<T[x].son.size()-1<<endl;
 				now=now+" "+dfs_expr(T[x].son[i]);
 			}
 			Head[x]=Add("out"+change(x),now,"parallelogram");
@@ -647,11 +617,9 @@ int dfs(int x){
 			return x;
 		}
 		if(T[y].name=="decl")return 0;
-		//if(T[y].name=="expr"){
 		Head[x]=Add("expr"+change(x),dfs_expr(y),"box");
 		Tail[x]=Head[x];
 		return x;
-		//}
 	}
 	if(T[x].name=="func"){
 		return dfs(T[x].son[4]);
@@ -680,26 +648,20 @@ void out(){
 	Head[0]=Add("main","开始","oval"); 
 	Tail[0]=Add("end","结束","oval");
 	to=dfs(fun["main"]);
-//	cout<<fun["main"]<<endl;
 	put_link(Head[0],Head[to],"");
 	put_link(Tail[to],Tail[0],"");
 	
 	for(int i=1;i<=tot;++i){
-		//cout<<T[i].name<<endl;
 		if(T[i].name=="break"){
 			int x=T[i].fa;
 			while(x!=0&&(T[x].son.size()==0||(T[T[x].son[0]].name!="for"&&T[T[x].son[0]].name!="while"))){
-				//cout<<x<<endl;
 				x=T[x].fa;
 			}
 			put_link(Head[T[i].fa],Tail[x],"break");
-			//cout<<Head[T[i].fa]<<" "<<Tail[x]<<endl;
-			//cout<<"*******"<<" "<<x<<endl;
 		}
 		if(T[i].name=="continue"){
 			int x=T[i].fa;
 			while(x!=0&&(T[x].son.size()==0||(T[T[x].son[0]].name!="for"&&T[T[x].son[0]].name!="while"))){
-				//cout<<x<<endl;
 				x=T[x].fa;
 			}
 			if(T[T[x].son[0]].name=="for"){
@@ -716,6 +678,7 @@ void out(){
 	cout<<"}"<<endl;
 }
 
+/*----------------*/
 
 int main(){
 	freopen("prog.txt","r",stdin);
@@ -728,19 +691,10 @@ int main(){
 	for(int idx=0;idx<len;++idx){
 		lexer(s,idx,len);
 	}
-	
-//	for(int i=1;i<=tot;++i)T[i].print();
-//	cout<<tot<<endl;
 	length=tot;
 	::idx=1;
 	int root=program();
-//  int root=stmts();
-/*	for(int i=length+1;i<=tot;++i){
-		T[i].print();
-	}*/
 	//Out_put(length+1);//print AST
-	
 	out();//print graphviz.dot
-	
 	return 0;
 }
