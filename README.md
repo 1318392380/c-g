@@ -38,3 +38,5 @@ https://blog.csdn.net/weixin_42529594/article/details/105622166
 我的任务完成了，之后就交给命运了。
 
 一切都是 steins gate 的选择！
+
+（对了，还没来得及学 git ，不规范的地方请见谅
