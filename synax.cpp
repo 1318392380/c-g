@@ -40,7 +40,7 @@ struct Token{
 	int idx,fa;
 	void print(){
 		cout<<idx<<":"<<"< "<<name<<" , "<<val<<" >"<<":";
-		for(int i=0;i<son.size();++i)cout<<son[i]<<" ";cout<<endl;
+		for(int i=0;i<son.size();++i)cout<<son[i]<<" ";cout<<"||"<<fa<<endl;
 	}
 }T[100005];
 
@@ -557,6 +557,9 @@ string _del(string s){//delete the %d %lld %.lf %s %c and add
 		}
 		if(s[i]=='\"')_now+="\\";
 		if(s[i]=='\'')_now+="\\";
+		if(i+1<s.size()&&s[i]=='\\'&&s[i+1]=='n'){
+			_now+="\\";
+		} 
 		_now+=s[i];
 	}
 	return _now;
@@ -680,6 +683,36 @@ void out(){
 //	cout<<fun["main"]<<endl;
 	put_link(Head[0],Head[to],"");
 	put_link(Tail[to],Tail[0],"");
+	
+	for(int i=1;i<=tot;++i){
+		//cout<<T[i].name<<endl;
+		if(T[i].name=="break"){
+			int x=T[i].fa;
+			while(x!=0&&(T[x].son.size()==0||(T[T[x].son[0]].name!="for"&&T[T[x].son[0]].name!="while"))){
+				//cout<<x<<endl;
+				x=T[x].fa;
+			}
+			put_link(Head[T[i].fa],Tail[x],"break");
+			//cout<<Head[T[i].fa]<<" "<<Tail[x]<<endl;
+			//cout<<"*******"<<" "<<x<<endl;
+		}
+		if(T[i].name=="continue"){
+			int x=T[i].fa;
+			while(x!=0&&(T[x].son.size()==0||(T[T[x].son[0]].name!="for"&&T[T[x].son[0]].name!="while"))){
+				//cout<<x<<endl;
+				x=T[x].fa;
+			}
+			if(T[T[x].son[0]].name=="for"){
+				put_link(Head[T[i].fa],Head[x]+1,"continue");
+			}else{
+				put_link(Head[T[i].fa],Head[x],"continue");
+			}
+		}
+		if(T[i].name=="return"){
+			put_link(Head[T[i].fa],Tail[0],"return");
+		}
+	}
+	
 	cout<<"}"<<endl;
 }
 
@@ -705,10 +738,9 @@ int main(){
 /*	for(int i=length+1;i<=tot;++i){
 		T[i].print();
 	}*/
-//	Out_put(length+1);//print AST
+	//Out_put(length+1);//print AST
 	
 	out();//print graphviz.dot
 	
 	return 0;
 }
-//update 3.16 scanf / printf
