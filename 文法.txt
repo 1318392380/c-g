@@ -1,0 +1,91 @@
+
+program -> //decls
+	   | func
+	   
+
+func -> type id '(' decls ')' block
+
+decls -> decl ',' decls
+	|  e
+
+decl ->  “extern" type expr
+	| type expr 
+	|  e
+
+block -> '{' stmts '}'
+
+stmts -> stmt stmts
+	|  e
+
+stmt -> while '(' expr ')' stmt
+	| expr ';'
+	| if '(' expr ')' stmt {else stmt } 
+	| for '(' expr ';' expr ';' expr ')' stmt
+	| block
+	//| extern type expr ';'
+	| decl ';'
+	| break ';'
+	| continue ';'
+	| return expr ';'
+//	| '#' define id 
+	| scanf '(' string ',' '&' expr ')' ';' // 
+	| printf '(' string ',' expr ')' ';'//
+	
+
+expr -> 
+	| cond2 '=' expr
+	| cond2
+
+cond2 -> cond1 || cond2
+	|  cond1
+
+cond1 -> bit2 && cond1
+	|  bit2
+
+bit2 -> rel2 '&' bit2
+	| rel2 '|' bit2
+	| rel2 '^' bit2
+	| bit2
+
+rel2 -> rel1 == rel2
+	| rel1 != rel2
+	| rel1
+
+rel1 -> bit1 '<' rel1
+	| bit1 '<=' rel1
+	| bit1 '>=' rel1
+	| bit1 '>' rel1
+	| bit1 
+
+bit1 -> op2 '>>' bit1
+	| op2 '<<' bit1
+	| op2
+
+op2 ->  op1 '+' op2
+	| op1 '-' op2
+	| op1
+
+op1 ->  not '*' op1
+	| not '/' op1
+	| not '%' op1
+	| not
+
+not -> '!' minus
+	| minus
+
+minus -> '-' access 
+	| access
+
+access -> factor access2
+
+access2 -> '[' expr ']' access2
+	   | e	
+
+factor -> '(' expr ')'
+	| num
+	| id
+	| id '(' expr ',' expr ',' ... ')'//ofunc
+	| getchar '(' ')'
+	| string
+	| char
+
